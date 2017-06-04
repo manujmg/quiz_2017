@@ -10,6 +10,6 @@ module.exports = {
   },
 
   down: function (queryInterface, Sequelize) {
-    return queryInterface.removeColumn('Tips', 'AuthorId')
+    return queryInterface.removeColumn('Tips', 'AuthorTipId')
   }
 };
