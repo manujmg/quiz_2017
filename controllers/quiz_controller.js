@@ -221,4 +221,82 @@ exports.check = function (req, res, next) {
         result: result,
         answer: answer
     });
+
+
+};
+// GET /quizzes/random_play
+exports.randomplay = function (req, res, next) {
+    var preguntaHecha = false;
+    if(!req.session.quizzes_correctos){
+        req.session.quizzes_correctos = new Array;
+    }
+    req.session.score = req.session.quizzes_correctos.length;
+    var quizzes=models.Quiz.findAll()
+    .then(function(quizzes){
+        if(quizzes){
+               for(i in quizzes){
+                    for(j in req.session.quizzes_correctos){
+                        if(quizzes[i].id === req.session.quizzes_correctos[j]){
+                         preguntaHecha = true;
+                        }
+                    }
+                    if(!preguntaHecha){
+                        req.quiz=quizzes[i];
+                    }
+                    preguntaHecha=false;
+                }
+        }else{throw new Error('No existe ningun Quiz')}
+    })
+    .then(function(quiz){
+         res.render('quizzes/random_play', {
+                    quiz: req.quiz,
+                    score: req.session.score
+         });
+    })
+    .catch(function(error){
+        next(error);
+    })
+
+};
+
+
+
+
+
+// GET /quizzes/randomcheck/:quizId
+exports.randomcheck = function (req, res, next) {
+
+    var answer = req.query.answer || "";
+
+    var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
+    if(!result){
+        req.session.quizzes_correctos = new Array;
+        res.render('quizzes/random_check', {
+           result: result,
+           answer: answer,
+           score: req.session.score,
+        });
+    }else{
+        req.session.score++;
+        req.session.quizzes_correctos.push(req.quiz.id);
+
+    }
+    var quizzesMax = models.Quiz.count()
+    .then(function(quizzesMax){
+        if(req.session.score === quizzesMax){
+            req.session.quizzes_correctos = new Array;
+            res.render('quizzes/random_nomore', {
+                score: quizzesMax
+            });
+        }else{
+            res.render('quizzes/random_check', {
+                result: result,
+                answer: answer,
+                score: req.session.score,
+            });
+        }
+    })
+    .catch(function(error){
+            next(error);
+    })
 };
